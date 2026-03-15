@@ -1,13 +1,13 @@
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.nio.channels.FileChannel;
+import java.io.*;
+import java.util.Arrays;
+import java.util.List;
 
-public class View {
+public class View extends Thread {
 
-    public static void main(String[] arg) {
+    public void main(String[] arg) {
 
         JFrame jFrame = new JFrame();
         jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -30,16 +30,42 @@ public class View {
         fileLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         jPanel.add(fileLabel);
 
+        JLabel msgLabel = new JLabel();
+        msgLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        jPanel.add(msgLabel);
+
         JButton uploadButton = new JButton("Upload CSV");
         uploadButton.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("CSV files", "csv"));
+            fileChooser.setFileFilter(new FileNameExtensionFilter("CSV files", "csv"));
 
             int result = fileChooser.showOpenDialog(jFrame);
             if (result == JFileChooser.APPROVE_OPTION) {
-                java.io.File selectedFile = fileChooser.getSelectedFile();
+                File selectedFile = fileChooser.getSelectedFile();
                 fileLabel.setText("Selected: " + selectedFile.getName());
+
+                File csvUploaded = selectedFile;
+                String line;
+                String delimiter = ",";
+
+                try (BufferedReader bufferedReader = new BufferedReader(new FileReader(csvUploaded))) {
+                    while ((line = bufferedReader.readLine()) != null) {
+                        String[] value = line.split(delimiter);
+                        //System.out.println(Arrays.toString(value));
+
+                        Controller.addToWaitingQueue(value);
+                    }
+                } catch (IOException ee) {
+                    msgLabel.setText("404 ERROR 404");
+
+                    System.out.println("IO exception: " + ee.getMessage());
+                } catch (Exception ee) {
+                    msgLabel.setText("404 ERROR 404");
+
+                    System.out.println("Error: " + ee.getMessage());
+                }
             }
+
         });
         uploadButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         jPanel.add(uploadButton);
@@ -59,18 +85,15 @@ public class View {
         jPanel.add(testingLabel);
 
         JButton runButton = new JButton("RUN");
-        runButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        runButton.addActionListener(e -> {
+            String selectedScheduling = jComboBox.getItemAt(jComboBox.getSelectedIndex());
 
-                String selectedScheduling = jComboBox.getItemAt(jComboBox.getSelectedIndex());
+            String schedulingMethod = "You selected " + selectedScheduling;
 
-                String schedulingMethod = "You selected " + selectedScheduling;
+            System.out.println("You selected " + selectedScheduling);
 
-                System.out.println("You selected " + selectedScheduling);
+            testingLabel.setText(schedulingMethod);
 
-                testingLabel.setText(schedulingMethod);
-            }
         });
         runButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         jPanel.add(runButton);
